@@ -1,0 +1,79 @@
+###
+post http://localhost:2025/creaetuser
+Content-Type: application/json
+
+{
+    "username":"admin",
+    "password":"admin",
+    "email":"admin@gmail.com",
+    "role":"admin",
+    "phone":"085161671965"
+}
+
+###
+post http://localhost:2025/creaetuser
+Content-Type: application/json
+
+{
+    "username":"use2",
+    "password":"user2",
+    "email":"user2@gmail.com",
+    "role":"user",
+    "phone":"085161671965"
+}
+
+###
+post http://localhost:2025/login 
+Content-Type: application/json
+
+{
+    "username":"admin",
+    "password":"admin"
+}
+
+###
+post http://localhost:2025/login 
+Content-Type: application/json
+
+{
+    "username":"user",
+    "password":"user"
+}
+
+###
+get http://localhost:2025/me 
+
+###
+get http://localhost:2025/getbooking
+
+###
+post http://localhost:2025/createbooking
+Content-Type: application/json
+
+{
+    "wisataId": "1",
+    "tanggalBooking": "2024-02-12",
+    "jumlahOrang": 6
+}
+
+
+###
+put http://localhost:2025/updatebooking/1
+Content-Type: application/json
+
+{
+    "wisataId": "1",
+    "tanggalBooking": "2024-02-12",
+    "jumlahOrang": 7
+}
+
+###
+post http://localhost:2025/createtransaksi
+Content-Type: application/json
+
+{
+  "bookingId": 1
+}
+
+###
+get http://localhost:2025/getboking/2
