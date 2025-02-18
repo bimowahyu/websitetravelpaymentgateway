@@ -15,7 +15,19 @@ post http://localhost:2025/creaetuser
 Content-Type: application/json
 
 {
-    "username":"use2",
+    "username":"user",
+    "password":"user",
+    "email":"user@gmail.com",
+    "role":"user",
+    "phone":"085161671965"
+}
+
+###
+post http://localhost:2025/creaetuser
+Content-Type: application/json
+
+{
+    "username":"user2",
     "password":"user2",
     "email":"user2@gmail.com",
     "role":"user",
@@ -41,18 +53,39 @@ Content-Type: application/json
 }
 
 ###
+post http://localhost:2025/login 
+Content-Type: application/json
+
+{
+    "username":"user2",
+    "password":"user2"
+}
+
+###
+get http://localhost:2025/getuser
+
+###
 get http://localhost:2025/me 
 
 ###
 get http://localhost:2025/getbooking
 
 ###
+post http://localhost:2025/createkategori
+Content-Type: application/json
+
+{
+   "namaKategori": "wisata"
+}
+
+
+###
 post http://localhost:2025/createbooking
 Content-Type: application/json
 
 {
-    "wisataId": "1",
-    "tanggalBooking": "2024-02-12",
+    "wisataId": "2",
+    "tanggalBooking": "2024-03-12",
     "jumlahOrang": 6
 }
 
@@ -76,4 +109,17 @@ Content-Type: application/json
 }
 
 ###
-get http://localhost:2025/getboking/2
+get http://localhost:2025/getwisata
+
+###
+get http://localhost:2025/getbooking/1
+
+###
+get http://localhost:2025/getbooking
+
+
+###
+get http://localhost:2025/getkonfigurasi
+
+###
+get http://localhost:2025/getslide

@@ -4,11 +4,19 @@ const { where } = require('sequelize')
 const path = require('path');
 const fs = require('fs').promises;
 const moment = require('moment');
+const kategori = require('../model/kategoriModel')
 
 exports.getWisata = async(req,res) => {
     try {
         const Wisata = await wisata.findAll({
-            attributes: ['id','nama','deskripsi','lokasi','harga','gambar','kapasitas','status']
+            attributes: ['id','nama','deskripsi','lokasi','harga','gambar','kapasitas','pemberangkatan','status','kategoriId'],
+            include: [
+                {
+                    model: kategori,
+                    as: 'kategori',
+                    attributes:['namaKategori']
+                }
+            ]
         })
         return res.status(200).json({
             code: '200',
@@ -24,7 +32,15 @@ exports.getWisataById = async(req,res) => {
     try {
         const {id} = req.params
         const Wisata = await wisata.findOne({
-            where: {id}
+            where: {id},
+            attributes: ['id','nama','deskripsi','lokasi','harga','gambar','kapasitas','status','pemberangkatan','kategoriId'],
+            include: [
+                {
+                    model: kategori,
+                    as: 'kategori',
+                    attributes:['namaKategori']
+                }
+            ]
 
         })
         if(!Wisata){
@@ -49,13 +65,13 @@ exports.createWisata = async(req,res) => {
         if (!userLogin) {
             return res.status(401).json({message: 'Unauthorized'})
         }
-        const {nama, deskripsi, lokasi, harga, kapasitas, status} = req.body
+        const {nama, deskripsi, lokasi, harga, kapasitas,pemberangkatan, status, kategoriId} = req.body
         console.log(req.files);
         if (!req.files || !req.files.image) {
             return res.status(400).json({ msg: 'No file uploaded' });
         }
         console.log(req.files);
-
+        
         const file = req.files.image; 
         const ext = path.extname(file.name).toLowerCase();
         const allowedTypes = ['.png', '.jpg', '.jpeg'];
@@ -83,7 +99,9 @@ exports.createWisata = async(req,res) => {
             harga: harga,
             gambar: fileName,
             kapasitas: kapasitas,
-            status: status
+            pemberangkatan: pemberangkatan,
+            status: status,
+            kategoriId: kategoriId
         }
         console.log(createWisata)
         await wisata.create(createWisata)
@@ -105,7 +123,7 @@ exports.updateWisata = async(req,res) => {
             return res.status(401).json({message: 'Unauthorized'})
         }
         const {id} = req.params
-        const { nama, deskripsi, lokasi, harga, kapasitas, status } = req.body;
+        const { nama, deskripsi, lokasi, harga, kapasitas, status ,kategoriId,pemberangkatan} = req.body;
         const WisataUpdate = await wisata.findOne({
             where: {id}
         })
@@ -153,7 +171,9 @@ exports.updateWisata = async(req,res) => {
             harga,
             gambar: fileName,
             kapasitas,
-            status
+            status,
+            pemberangkatan,
+            kategoriId
         });
 
         return res.status(200).json({
@@ -181,8 +201,8 @@ exports.deleteWisata = async(req,res) => {
         if(!WisataDelete){
             return res.status(404).json('widata tidak di temukan')
         }
-        await wisata.destroy()
-        return res.status(203).json('wisata berhasil di hapus')
+        await wisata.destroy({where : {id}})
+        return res.status(202).json('wisata berhasil di hapus')
         
     } catch (error) {
         return res.status(500).json(error.message)

@@ -1,5 +1,6 @@
 const express = require('express')
 const db = require('./config/dataBase')
+const cors = require("cors");
 const session = require('express-session');
 const helmet = require('helmet')
 const bodyParser = require('body-parser');
@@ -11,8 +12,11 @@ const userRoute = require('./route/userRoute')
 const wisataRoute = require('./route/wisataRoute')
 const transaksiRoute = require('./route/transaksiRoute')
 const bokingRoute = require('./route/bokingRoute')
+const kategoriRoute = require('./route/kategoriRoute')
+const konfigurasiRoute = require('./route/konfigurasiRoute')
 const TIMEZONE = "Asia/Jakarta";
 const fileUpload = require('express-fileupload');
+const path = require('path')
 
 const { setupAssociations } = require('./model/associations')
 
@@ -32,6 +36,13 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
+app.use(cors({
+    origin: true,//'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
 app.use(fileUpload());
 
 
@@ -56,15 +67,19 @@ app.use(session({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use('/uploads', express.static('public/uploads'));
+//app.use('/uploads', express.static('public/uploads'));
+app.use('/public/uploads', express.static(path.join(__dirname, 'public/uploads')));
+app.use('/uploads/config', express.static(path.join(__dirname, 'uploads/config')));
 
 
 
 app.use(authRoute)
 app.use(userRoute)
+app.use(kategoriRoute)
 app.use(wisataRoute)
 app.use(transaksiRoute)
 app.use(bokingRoute)
+app.use(konfigurasiRoute)
 
 app.get('/',(req,res)=> {
     res.send('Hello everyone')

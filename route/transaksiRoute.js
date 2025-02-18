@@ -13,7 +13,7 @@ const router = express.Router()
 router.get('/gettransaksi',verifyUser,getTransaksi)
 router.get('/gettransaksibyid/:id',verifyUser,getTransaksiById)
 router.post('/createTransaksi',verifyUser,createTransaksi)
-router.delete('/deleteTransaksi/:id',verifyUser,deleteTransaksi)
+router.delete('/deleteTransaksi/:id',verifyUser,adminOnly,deleteTransaksi)
 router.put('/updateTransaksi/:id',verifyUser,updateTransaksi)
 router.post('/midtrans-notification', verifyMidtransSignature, midtransNotification);
 //router.get('/gettransaksinotification/:order_id',getTransaksinotification)

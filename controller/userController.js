@@ -17,7 +17,7 @@ exports.getUser = async(req,res) => {
     }
     const offset = (page - 1) * limit;
     const { count, rows: users } = await user.findAndCountAll({
-        attributes: ['id', 'name', 'email', 'password', 'phone', 'role'],
+        attributes: ['id', 'username', 'email', 'password', 'phone', 'role'],
         include: [{
             model: boking,
             attributes: ['id', 'userId', 'wisataId', 'tanggalBooking', 'jumlahOrang', 'totalHarga', 'status', 'createdAt'],
@@ -28,7 +28,7 @@ exports.getUser = async(req,res) => {
         }],
         limit: limit,
         offset: offset,
-        order: [['createdAt', 'DESC']]
+        //order: [['createdAt', 'DESC']]
         });
         const totalPages = Math.ceil(count / limit);
         res.status(200).json({
@@ -178,8 +178,11 @@ exports.deleteUser = async(req,res) => {
         if(!User){
             return res.status(404).json('user not found')
         }
-        await User.destroy()
-        return res.status(201).json('user deleted')        
+        await user.destroy({where:{id}})
+        return res.status(202).json({
+            message:'user delete succes',
+            code: 202,
+        })        
     } catch (error) {
         return res.status(500).json(error.message)
     }

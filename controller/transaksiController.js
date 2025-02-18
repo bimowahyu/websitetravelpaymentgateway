@@ -4,7 +4,7 @@ const transaksi = require('../model/transaksiModel');
 const boking = require('../model/bokingModel');
 const user = require('../model/userModel');
 const wisata = require('../model/wisataModel');
-const { Op } = require('sequelize');
+const { Op, where } = require('sequelize');
 const crypto = require('crypto');
 
 const snap = new midtransClient.Snap({
@@ -233,9 +233,24 @@ exports.updateTransaksi = async(req,res) => {
 
 exports.deleteTransaksi = async(req,res) => {
     try {
-        
-        
+        const userLogin = req.user
+        if(!userLogin){
+            return res.status(401).json({message: 'silahkan login'})
+        }
+        const {id} = req.params
+        const transaksiDelete = await transaksi.findOne({
+            where:{id}
+        })
+        if(!transaksiDelete){
+            return res.status(404).json({message: 'Transaksi tidak ditemukan'})
+        }
+        await transaksi.destroy({where: {id}})
+        return res.status(203).json({
+            message: 'Transaksi berhasil dihapus',
+            code: 203
+
+        })
     } catch (error) {
-        
+        return res.status(500).json(error.message)
     }
 }

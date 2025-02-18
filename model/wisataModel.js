@@ -1,5 +1,6 @@
 const db = require('../config/dataBase')
 const { DataTypes } = require('sequelize')
+const kategori = require('./kategoriModel')
 
 const wisata = db.define('wisata',{
     id: {
@@ -31,9 +32,21 @@ const wisata = db.define('wisata',{
         type: DataTypes.INTEGER,
         allowNull: false
       },
+      pemberangkatan: {
+        type: DataTypes.DATEONLY,
+        allowNull: false
+      },
       status: {
         type: DataTypes.ENUM('tersedia', 'penuh', 'tutup'),
         defaultValue: 'tersedia'
-      }
+      },
+      kategoriId: {  
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: kategori,
+            key: 'id'
+        }
+    }
     });
 module.exports = wisata    

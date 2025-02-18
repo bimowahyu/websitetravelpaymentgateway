@@ -18,6 +18,18 @@ const konfigurasi = db.define('konfigurasi',{
         type: DataTypes.TEXT,
         allowNull: false
     },
+    text:{
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    email:{
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    footer:{
+        type: DataTypes.STRING,
+        allowNull: false
+    },
     logoTravel:{
         type: DataTypes.STRING,
         allowNull: false

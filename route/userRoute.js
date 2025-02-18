@@ -15,6 +15,6 @@ router.get('/getuser/:id',verifyUser,getUserById)
 router.post('/creaetuser', createUser)
 router.post('/register',registers)
 router.put('/updateuser/:id',verifyUser, updateUser)
-router.delete('/deleteuser/:id',verifyUser, deleteUser)
+router.delete('/deleteuser/:id',verifyUser,adminOnly, deleteUser)
 
 module.exports = router

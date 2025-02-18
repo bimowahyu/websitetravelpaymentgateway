@@ -2,47 +2,55 @@ const { where } = require('sequelize')
 const boking = require('../model/bokingModel')
 const user = require('../model/userModel')
 const wisata = require('../model/wisataModel')
+const kategori = require('../model/kategoriModel')
 // const { Op } = require('sequelize');
 const db = require('../config/dataBase');
 const { Op, Transaction } = require('sequelize');
 
-
-exports.getBoking = async(req,res) => {
+exports.getBoking = async (req, res) => {
     try {
-        const userLogin = req.user
-        if(!userLogin){
-            return res.status(401).json({message: 'Unauthorized'})
+        const userLogin = req.user;
+        if (!userLogin) {
+            return res.status(401).json({ message: 'Unauthorized' });
         }
-        
-        const page = parseInt(req.query.page) || 1 
-        const limit = parseInt(req.query.limit) || 10
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
         if (page < 1 || limit < 1) {
-            return res.status(400).json({ msg: 'Page and limit must be greater than 0' });
+            return res.status(400).json({ message: 'Page and limit must be greater than 0' });
         }
         const offset = (page - 1) * limit;
-        const { count, rows: dataBooking }= await boking.findAndCountAll({
-            //where: { userId: userLogin.id },
-            attributes:['id','userId','wisataId','tanggalBooking','jumlahOrang','totalHarga','status'],
+        const whereCondition = userLogin.role === 'admin' ? {} : { userId: userLogin.id };
+
+        const { count, rows: dataBooking } = await boking.findAndCountAll({
+            where: whereCondition,
+            attributes: ['id', 'userId', 'wisataId', 'tanggalBooking', 'jumlahOrang', 'totalHarga', 'status'],
             include: [
                 {
                     model: user,
-                    as: 'user',  
+                    as: 'user',
                     attributes: ['id', 'username', 'email', 'phone']
                 },
                 {
                     model: wisata,
-                    attributes: ['id', 'nama', 'deskripsi', 'lokasi', 'harga', 'gambar', 'kapasitas', 'status']
+                    attributes: ['id', 'nama', 'deskripsi', 'lokasi', 'harga', 'gambar', 'kapasitas', 'status', 'kategoriId'],
+                    include: [
+                        {
+                            model: kategori,
+                            as: 'kategori',
+                            attributes: ['namaKategori']
+                        }
+                    ]
                 }
             ],
             limit: limit,
             offset: offset,
             order: [['createdAt', 'DESC']]
         });
-    
-      
+
         const totalPages = Math.ceil(count / limit);
         res.status(200).json({
-            code: 200, 
+            code: 200,
             status: 'success',
             data: dataBooking,
             meta: {
@@ -54,11 +62,11 @@ exports.getBoking = async(req,res) => {
                 hasPreviousPage: page > 1
             }
         });
-        
+
     } catch (error) {
-        return res.status(500).json(error.message)
+        return res.status(500).json({ message: error.message });
     }
-}
+};
 
 exports.getBokingById = async(req,res) => {
     try {
@@ -76,9 +84,16 @@ exports.getBokingById = async(req,res) => {
                     attributes: ['id', 'username', 'email', 'phone']
                 },
                 {
-              model: wisata,
-              attributes: ['id', 'nama', 'deskripsi', 'lokasi', 'harga', 'gambar', 'kapasitas', 'status']
-        }]
+                    model: wisata,
+                    attributes: ['id', 'nama', 'deskripsi', 'lokasi', 'harga', 'gambar', 'kapasitas', 'status','kategoriId'],
+                    include: [
+                        {
+                            model: kategori,
+                            as: 'kategori',
+                            attributes: ['namaKategori']
+                        }
+                    ]
+                }]
         })
         return res.status(200).json({
             message: 'succes get data',
@@ -101,7 +116,7 @@ exports.createBoking = async (req, res) => {
         }
 
         const wisataData = await wisata.findOne({
-            attributes: ['id', 'harga', 'kapasitas', 'status'],
+            attributes: ['id', 'harga', 'kapasitas', 'status', 'pemberangkatan'], // Tambahkan 'pemberangkatan'
             where: { id: wisataId },
         });
 
@@ -112,19 +127,23 @@ exports.createBoking = async (req, res) => {
         const hargaPerOrang = wisataData.harga;
         const kapasitas = wisataData.kapasitas;
         const statusTempat = wisataData.status;
+        const pemberangkatanWisata = new Date(wisataData.pemberangkatan);
+        const tanggalBookingDate = new Date(tanggalBooking);
+        if (tanggalBookingDate.getTime() !== pemberangkatanWisata.getTime()) {
+            return res.status(400).json({ 
+                message: `Booking hanya dapat dilakukan pada tanggal ${wisataData.pemberangkatan}` 
+            });
+        }
 
         if (statusTempat === 'penuh' || statusTempat === 'tutup') {
             return res.status(400).json({ message: 'Tempat tidak tersedia untuk booking' });
         }
 
-        // Parse tanggalBooking ke Date object
-        const tanggalBookingDate = new Date(tanggalBooking);
         const startOfDay = new Date(tanggalBookingDate);
         startOfDay.setUTCHours(0, 0, 0, 0);
         const endOfDay = new Date(tanggalBookingDate);
         endOfDay.setUTCHours(23, 59, 59, 999);
 
-        // Ambil semua booking pada tanggal tersebut (tanpa memandang waktu)
         const existingBookings = await boking.findAll({
             where: {
                 wisataId,
@@ -155,13 +174,12 @@ exports.createBoking = async (req, res) => {
         const bookingData = await boking.create({
             userId: userLogin.id,
             wisataId,
-            tanggalBooking: tanggalBookingDate, // Simpan sebagai Date object
+            tanggalBooking: tanggalBookingDate,
             jumlahOrang,
             totalHarga,
             status: 'pending',
         });
 
-        // Update status wisata jika kapasitas penuh
         if (totalOrangBooking + jumlahOrang >= kapasitas) {
             await wisata.update(
                 { status: 'penuh' },
@@ -181,6 +199,7 @@ exports.createBoking = async (req, res) => {
     }
 };
 
+
 exports.updateBoking = async(req,res) => {
     try {
         const userLogin = req.user
@@ -198,6 +217,22 @@ exports.updateBoking = async(req,res) => {
         if (!bookingData) {
             return res.status(404).json({ message: 'Booking tidak ditemukan' });
         }
+        if (tanggalBooking) {
+            const wisataData = await wisata.findOne({
+                where: { id: bookingData.wisataId },
+                attributes: ['pemberangkatan']
+            });
+        
+            const pemberangkatanWisata = new Date(wisataData.pemberangkatan);
+            const tanggalBookingDate = new Date(tanggalBooking);
+        
+            if (tanggalBookingDate.getTime() !== pemberangkatanWisata.getTime()) {
+                return res.status(400).json({ 
+                    message: `Perubahan tanggal booking hanya dapat dilakukan pada tanggal ${wisataData.pemberangkatan}` 
+                });
+            }
+        }
+        
         if(bookingData.status == 'settlement'){
             return res.status(400).json({ message: 'Booking sudah lunas' });
         }
@@ -241,8 +276,28 @@ exports.updateBoking = async(req,res) => {
 
 exports.deleteBoking = async(req,res)=> {
     try {
-        
+        const userLogin = req.user
+        if(!userLogin){
+            return res.status(401).json({ message: 'Anda harus login terlebih dahuli'})
+        }
+        const {id} = req.params
+        const bookingData = await boking.findOne({
+            where:{id}
+        })
+        if(!bookingData){
+            return res.status(404).json({ message: 'Booking tidak ditemukan' })
+        }
+        if(!bookingData.status == 'settlement'){
+            return res.status(400).json({ message: 'Booking tidak dapat dihapus' })
+        }
+        await boking.destroy({
+            where: { id: id }
+        })
+        return res.status(203).json({
+            message:"berhasil hapus boking",
+            kode: 203
+        })
     } catch (error) {
-        
+        return res.status(500).json(error.message)
     }
 }
