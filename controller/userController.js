@@ -2,7 +2,10 @@ const user = require('../model/userModel')
 const boking = require('../model/bokingModel')
 const transaksi = require('../model/transaksiModel')
 const argon2 = require('argon2')
-const { where } = require('sequelize')
+const nodemailer = require('nodemailer');
+const crypto = require("crypto");
+require('dotenv').config();
+
 
 exports.getUser = async(req,res) => {
    try {
@@ -98,29 +101,144 @@ exports.createUser = async(req,res) =>{
     }
 }
 
-exports.registers = async(req,res) => {
+
+
+exports.registers = async(req,res) =>{
     try {
-        const {username, email, password, role, phone} = req.body;
-        if(!username || !email|| !password || !role || !phone){
-            return res.status(400).json({msg: 'Please fill in all fields'})
+        const {username, email, phone} = req.body
+        if (!username || !email  || !phone) {
+            return res.status(400).json({ msg: 'Please fill in all fields' });
         }
-        const hashpassword = await argon2.hash(password)
+        const defaultPassword = Math.random().toString(36).slice(-8)
+        const hashpassword = await argon2.hash(defaultPassword)
+
+        const validateEmail = (email) => {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        };
+        
+        if (!validateEmail(email)) {
+            return res.status(400).json({ msg: "Invalid email format" });
+        }
+
+        const existingUser = await user.findOne({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ msg: "Email already exists" });
+        }
         const User = await user.create({
             username,
             email,
             password: hashpassword,
-            role:'user',
+            role: 'user',
             phone
-        })
+        });
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER, 
+                pass: process.env.EMAIL_PASS,
+            }
+        });
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Welcome! Your Default Password',
+            text: `Hello ${username},\n\nYour account has been created successfully!\n\nYour default password is: ${defaultPassword}\n\nPlease change your password after logging in.\n\nBest Regards,\nYour App Team`
+        };
+        await transporter.sendMail(mailOptions);
+
         return res.status(201).json({
             code: 201,
             status: 'success',
+            message: 'User registered successfully. Default password sent to email if not on your email please check spam file.',
             data: User
-        })
+        });
+        
     } catch (error) {
-        return res.status(500).json(error.message)
+        return res.status(500).json({ logerror: error.message });
     }
 }
+exports.resetPassword = async(req,res)=> {
+    try {
+        const {username, email} = req.body
+        if (!username || !email ) {
+            return res.status(400).json({ msg: 'Please fill in all fields' });
+        }
+        const findUser = await user.findOne({
+            where: {
+                username, email
+            }
+        })
+        if(!findUser){
+            return res.status(404).json({ msg: 'Data not found' });
+        }
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const resetTokenHash = await argon2.hash(resetToken);
+        const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
+        findUser.resetToken = resetTokenHash;
+        findUser.resetTokenExpires = resetTokenExpires;
+        await findUser.save();
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+        const resetLink = `http://localhost:3000/reset-password?token=${resetToken}&email=${email}`;
+        const mailOptions = {
+            from: `"Your App Team" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: "Password Reset Request",
+            html: `
+                <p>Hello <strong>${username}</strong>,</p>
+                <p>You requested to reset your password. Click the link below to reset it:</p>
+                <a href="${resetLink}" target="_blank">Reset Password</a>
+                <p>This link will expire in 1 hour.</p>
+                <p>If you did not request this, please ignore this email.</p>
+                <p>Best Regards,<br><strong>Your App Team</strong></p>
+            `,
+        };
+        await transporter.sendMail(mailOptions);
+
+        return res.status(200).json({
+            msg: "Password reset link has been sent to your email.",
+        });
+
+        
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+}
+exports.updatePassword = async (req, res) => {
+    try {
+        const { email, token, newPassword } = req.body;
+
+        if (!email || !token || !newPassword) {
+            return res.status(400).json({ msg: "Please fill in all fields" });
+        }
+
+        const findUser = await user.findOne({ where: { email } });
+        if (!findUser) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+        const isTokenValid = await argon2.verify(findUser.resetToken, token);
+        const isTokenExpired = new Date() > new Date(findUser.resetTokenExpires);
+
+        if (!isTokenValid || isTokenExpired) {
+            return res.status(400).json({ msg: "Invalid or expired token" });
+        }
+        const hashNewPassword = await argon2.hash(newPassword);
+        findUser.password = hashNewPassword;
+        findUser.resetToken = null; 
+        findUser.resetTokenExpires = null;
+        await findUser.save();
+
+        return res.status(200).json({ msg: "Password has been updated successfully." });
+
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
 
 exports.updateUser = async(req, res) => {
     const { username, email, password, role, phone } = req.body;

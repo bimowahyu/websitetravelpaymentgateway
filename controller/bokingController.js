@@ -151,7 +151,8 @@ exports.createBoking = async (req, res) => {
                     [Op.between]: [startOfDay, endOfDay]
                 },
                 status: {
-                    [Op.in]: ['pending', 'settlement', 'capture']
+                   // [Op.in]: ['pending', 'settlement', 'capture']
+                  [Op.in]: ['settlement']
                 }
             },
             attributes: ['jumlahOrang', 'status']

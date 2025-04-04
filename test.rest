@@ -57,8 +57,19 @@ post http://localhost:2025/login
 Content-Type: application/json
 
 {
-    "username":"user2",
-    "password":"user2"
+    "username":"bimoemail",
+    "password":"k1gn7des"
+}
+
+###
+post http://192.168.100.18:2025/register
+Content-Type: application/json
+
+{
+    "username":"bimoemail",
+    "email": "bimowahyu1908@gmail.com",
+    "phone": "085161671965"
+
 }
 
 ###

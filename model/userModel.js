@@ -31,6 +31,14 @@ const user = db.define('user',{
       phone: {
         type: DataTypes.STRING,
         allowNull: true
+      },
+      resetToken:{
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      resetTokenExpires:{
+        type: DataTypes.DATE,
+        allowNull: true
       }
     });
 
