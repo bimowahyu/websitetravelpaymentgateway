@@ -22,7 +22,7 @@ const SlideImage = db.define('slideImage', {
         allowNull: false
     },
     deskripsi: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true
     },
     urutan: {

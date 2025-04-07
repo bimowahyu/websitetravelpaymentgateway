@@ -41,6 +41,7 @@ exports.getTransaksi = async (req, res) => {
                     include: [
                         {
                             model: user,
+                            as: 'user',
                             attributes: ['id', 'username', 'email', 'phone']
                         },
                         {
@@ -98,6 +99,7 @@ exports.getTransaksiById = async(req,res)=> {
                     include: [
                         {
                             model: user,
+                            as: 'user',
                             attributes: ['id', 'username', 'email'],
                         },
                         {
@@ -123,7 +125,51 @@ exports.getTransaksiById = async(req,res)=> {
         return res.status(500).json(error.message)
     }
 }
-
+exports.getTransaksiByBookingId = async(req, res) => {
+    try {
+        const userLogin = req.user;
+        if (!userLogin) {
+            return res.status(401).json({ message: 'Anda harus login terlebih dahulu' });
+        }
+        
+        const { bookingId } = req.params;
+        
+        const dataTransaksi = await transaksi.findOne({
+            where: { bookingId: bookingId },
+            include: [
+                {
+                    model: boking,
+                    attributes: ['id', 'userId', 'wisataId', 'tanggalBooking', 'jumlahOrang', 'totalHarga', 'status'],
+                    include: [
+                        {
+                            model: user,
+                            as: 'user', // Make sure to include the alias
+                            attributes: ['id', 'username', 'email'],
+                        },
+                        {
+                            model: wisata,
+                            attributes: ['id', 'nama', 'lokasi', 'harga'],
+                        },
+                    ]
+                }
+            ]
+        });
+  
+        if (!dataTransaksi) {
+            return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+        }
+        
+        return res.status(200).json({
+            message: 'Transaksi berhasil ditemukan',
+            code: 200,
+            data: dataTransaksi
+        });
+        
+    } catch (error) {
+        return res.status(500).json(error.message);
+    }
+  };
+  
 exports.createTransaksi = async (req, res) => {
     try {
       const { bookingId } = req.body;

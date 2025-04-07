@@ -82,13 +82,15 @@ get http://localhost:2025/me
 get http://localhost:2025/getbooking
 
 ###
-post http://localhost:2025/createkategori
+post http://localhost:2025/updatekategori/1
 Content-Type: application/json
 
 {
-   "namaKategori": "wisata"
+   "namaKategori": "Umroh"
 }
 
+###
+get http://localhost:2025/getkategori
 
 ###
 post http://localhost:2025/createbooking
@@ -97,7 +99,7 @@ Content-Type: application/json
 {
     "wisataId": "2",
     "tanggalBooking": "2024-03-12",
-    "jumlahOrang": 6
+    "jumlahOrang": 8
 }
 
 
@@ -120,7 +122,7 @@ Content-Type: application/json
 }
 
 ###
-get http://localhost:2025/getwisata
+get http://localhost:2025/getwisata/2
 
 ###
 get http://localhost:2025/getbooking/1
@@ -133,4 +135,4 @@ get http://localhost:2025/getbooking
 get http://localhost:2025/getkonfigurasi
 
 ###
-get http://localhost:2025/getslide
+get http://localhost:2025/getslide/1

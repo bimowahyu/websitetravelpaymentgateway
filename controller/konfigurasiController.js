@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const Konfigurasi = require('../model/konfigurasiModel');
-const SlideImage = require('../model/slideModel')
+const SlideImage = require('../model/slideModel');
+const { where } = require('sequelize');
 
 const uploadDir = path.join(__dirname, '..', 'uploads/config');
 
@@ -172,6 +173,31 @@ exports.getSlideImages = async (req, res) => {
             message: error.message
         });
     }
+};
+exports.getSlideImagesById = async (req, res) => {
+ try {
+    const {id} = req.params
+    const slides = await SlideImage.findOne({
+      where:{id}
+    })
+    if(!slides){
+        return res.status(404).json({
+            status: 'not found',
+            message: 'Slide tidak ditemukan'
+
+        })
+    }
+    return res.status(200).json({
+        code: 200,
+        status: 'success',
+        data: slides
+    })
+ } catch (error) {
+    return res.status(500).json({
+        status: 'error',
+        message: error.message || 'internal server error'
+    })
+ }
 };
 
 exports.createSlideImage = async (req, res) => {

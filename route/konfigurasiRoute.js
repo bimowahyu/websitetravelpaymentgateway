@@ -1,6 +1,6 @@
 const express = require('express')
 const {getKonfigurasi,createKonfigurasi,updateKonfigurasi,deleteKonfigurasi
-    ,getSlideImages,updateSlideImage,deleteSlideImage,createSlideImage} = require('../controller/konfigurasiController')
+    ,getSlideImages,updateSlideImage,deleteSlideImage,createSlideImage,getSlideImagesById} = require('../controller/konfigurasiController')
 const {verifyUser, adminOnly} = require('../middleware/userMiddleware')
 
 const router = express.Router()
@@ -12,8 +12,9 @@ router.delete('/deletekonfigurasi',verifyUser,adminOnly,deleteKonfigurasi)
 
 
 router.get('/getslide',getSlideImages)
+router.get('/getslide/:id',getSlideImagesById)
 router.post('/createslide',verifyUser,adminOnly,createSlideImage)
 router.put('/updateslide/:id',verifyUser,adminOnly,updateSlideImage)
-router.delete('/deleteslide',verifyUser,adminOnly,deleteSlideImage)
+router.delete('/deletesl/:id',verifyUser,adminOnly,deleteSlideImage)
 
 module.exports = router
